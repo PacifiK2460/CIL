@@ -1,16 +1,8 @@
 "use server";
 
 import "cloudflare/shims/web";
-import { drizzle } from "drizzle-orm/d1";
+import Cloudflare from "cloudflare";
 import { nanoid } from "nanoid";
-import {
-  PersonalTable,
-  ProductsTable,
-  ProvidersTable,
-  InvoicesTable,
-  FleetTable,
-} from "@/src/db/schema";
-
 import {
   Product,
   Provider,
@@ -19,26 +11,19 @@ import {
   Invoice,
   Fleet,
 } from "./definitions";
-import { and, eq } from "drizzle-orm";
 
-// const cloudflare = new Cloudflare({
-//   apiEmail: process.env.ACCOUNT_EMAIL,
-//   apiToken: process.env.API_TOKEN,
-// });
+const cloudflare = new Cloudflare({
+  apiEmail: process.env.ACCOUNT_EMAIL,
+  apiToken: process.env.API_KEY,
+});
 
-const db = drizzle(process.env.DB);
-export async function testConnection() {
-  console.log("D", process.env.DB);
-  console.log("DB", db);
+function numberToString(num: number) {
+  // Convert a number to a string with a fallback to 0 if error
   try {
-    if (!db) {
-      throw new Error("Database connection failed.");
-    }
-
-    const response = await db.select().from(PersonalTable);
-    console.log("Database connection successful:", response);
-  } catch (error) {
-    console.error("Database connection test failed:", error);
+    return num.toString();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return "0";
   }
 }
 
@@ -49,17 +34,33 @@ export async function testConnection() {
 */
 
 export async function getPersonal() {
-  const response = await db.select().from(PersonalTable).all();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Personal`,
+    }
+  );
+
+  const data = response.result[0].results as Personal[];
+  return data;
 }
 
 export async function getPersonalById(id: string) {
-  const response = await db
-    .select()
-    .from(PersonalTable)
-    .where(eq(PersonalTable.id, id))
-    .all();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Personal WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results;
+  if (data === undefined) {
+    return null;
+  }
+
+  return data[0] as Personal;
 }
 
 export async function addPersonal(
@@ -69,18 +70,16 @@ export async function addPersonal(
   rol: string,
   password: string
 ) {
-  const response = await db
-    .insert(PersonalTable)
-    .values({
-      id: nanoid(),
-      name,
-      email,
-      address,
-      rol,
-      password,
-    })
-    .returning();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `INSERT INTO Personal (id, name, email, address, rol, password) VALUES (?, ?, ?, ?, ?, ?)`,
+      params: [nanoid(), name, email, address, rol, password],
+    }
+  );
+  const data = response.result[0].results as Personal[];
+  return data;
 }
 
 export async function updatePersonal(
@@ -91,39 +90,45 @@ export async function updatePersonal(
   rol: string,
   password: string
 ) {
-  const response = await db
-    .update(PersonalTable)
-    .set({
-      name,
-      email,
-      address,
-      rol,
-      password,
-    })
-    .where(eq(PersonalTable.id, id))
-    .returning();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `UPDATE Personal SET name = ?, email = ?, address = ?, rol = ?, password = ? WHERE id = ?`,
+      params: [name, email, address, rol, password, id],
+    }
+  );
+  const data = response.result[0].results as Personal[];
+  return data;
 }
 
 export async function deletePersonal(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .delete(PersonalTable)
-    .where(eq(PersonalTable.id, id))
-    .returning();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `DELETE FROM Personal WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results as Personal[];
+  return data;
 }
 
 export async function login(email: string, password: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .select()
-    .from(PersonalTable)
-    .where(
-      and(eq(PersonalTable.email, email), eq(PersonalTable.password, password))
-    )
-    .all();
-  return response as Personal[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Personal WHERE name = ? AND password = ?`,
+      params: [email, password],
+    }
+  );
+  const data = response.result[0].results as Personal[];
+  if (data.length === 0) {
+    return null;
+  }
+  return data[0] as Personal;
 }
 
 /*
@@ -132,19 +137,32 @@ export async function login(email: string, password: string) {
 */
 
 export async function getProducts() {
-  const db = drizzle(process.env.DB);
-  const response = await db.select().from(ProductsTable).all();
-  return response as Product[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Products`,
+    }
+  );
+  const data = response.result[0].results as Product[];
+  return data;
 }
 
 export async function getProductById(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .select()
-    .from(ProductsTable)
-    .where(eq(ProductsTable.id, id))
-    .all();
-  return response as Product[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Products WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results;
+  if (data === undefined) {
+    return null;
+  }
+
+  return data[0] as Product;
 }
 
 export async function addProduct(
@@ -153,18 +171,16 @@ export async function addProduct(
   quantity: number,
   location: string
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .insert(ProductsTable)
-    .values({
-      id: nanoid(),
-      provider: provider_id,
-      name,
-      quantity: quantity,
-      location,
-    })
-    .returning();
-  return response as Product[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `INSERT INTO Products (id, provider, name, quantity, location) VALUES (?, ?, ?, ?, ?)`,
+      params: [nanoid(), provider_id, name, numberToString(quantity), location],
+    }
+  );
+  const data = response.result[0].results as Product[];
+  return data;
 }
 
 export async function updateProduct(
@@ -174,27 +190,29 @@ export async function updateProduct(
   quantity: number,
   location: string
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .update(ProductsTable)
-    .set({
-      provider: provider_id,
-      name,
-      quantity: quantity,
-      location,
-    })
-    .where(eq(ProductsTable.id, id))
-    .returning();
-  return response as Product[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `UPDATE Products SET provider = ?, name = ?, quantity = ?, location = ? WHERE id = ?`,
+      params: [provider_id, name, numberToString(quantity), location, id],
+    }
+  );
+  const data = response.result[0].results as Product[];
+  return data;
 }
 
 export async function deleteProduct(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .delete(ProductsTable)
-    .where(eq(ProductsTable.id, id))
-    .returning();
-  return response as Product[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `DELETE FROM Products WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results as Product[];
+  return data;
 }
 
 /*
@@ -203,19 +221,32 @@ export async function deleteProduct(id: string) {
 */
 
 export async function getProviders() {
-  const db = drizzle(process.env.DB);
-  const response = await db.select().from(ProvidersTable).all();
-  return response as Provider[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Providers`,
+    }
+  );
+  const data = response.result[0].results as Provider[];
+  return data;
 }
 
 export async function getProviderById(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .select()
-    .from(ProvidersTable)
-    .where(eq(ProvidersTable.id, id))
-    .all();
-  return response as Provider[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Providers WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results;
+  if (data === undefined) {
+    return null;
+  }
+
+  return data[0] as Provider;
 }
 
 export async function addProvider(
@@ -224,18 +255,16 @@ export async function addProvider(
   phone: string,
   email: string
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .insert(ProvidersTable)
-    .values({
-      id: nanoid(),
-      name,
-      address,
-      phone,
-      email,
-    })
-    .returning();
-  return response as Provider[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `INSERT INTO Providers (id, name, address, phone, email) VALUES (?, ?, ?, ?, ?)`,
+      params: [nanoid(), name, address, phone, email],
+    }
+  );
+  const data = response.result[0].results as Provider[];
+  return data;
 }
 
 export async function updateProvider(
@@ -245,27 +274,30 @@ export async function updateProvider(
   phone: string,
   email: string
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .update(ProvidersTable)
-    .set({
-      name,
-      address,
-      phone,
-      email,
-    })
-    .where(eq(ProvidersTable.id, id))
-    .returning();
-  return response as Provider[];
+  console.log("Adding provider", id, name, address, phone, email);
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `UPDATE Providers SET name = ?, address = ?, phone = ?, email = ? WHERE id = ?`,
+      params: [name, address, phone, email, id],
+    }
+  );
+  const data = response.result[0].results as Provider[];
+  return data;
 }
 
 export async function deleteProvider(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .delete(ProvidersTable)
-    .where(eq(ProvidersTable.id, id))
-    .returning();
-  return response as Provider[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `DELETE FROM Providers WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results as Provider[];
+  return data;
 }
 
 /*
@@ -274,19 +306,32 @@ export async function deleteProvider(id: string) {
 */
 
 export async function getFleet() {
-  const db = drizzle(process.env.DB);
-  const response = await db.select().from(FleetTable).all();
-  return response as Fleet[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Fleet`,
+    }
+  );
+  const data = response.result[0].results as Fleet[];
+  return data;
 }
 
 export async function getFleetById(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .select()
-    .from(FleetTable)
-    .where(eq(FleetTable.id, id))
-    .all();
-  return response as Fleet[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Fleet WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results;
+  if (data === undefined) {
+    return null;
+  }
+
+  return data[0] as Fleet;
 }
 
 export async function addFleet(
@@ -295,18 +340,16 @@ export async function addFleet(
   destination: string,
   status: FleetStatus
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .insert(FleetTable)
-    .values({
-      id: nanoid(),
-      invoice: invoice_id,
-      departure,
-      destination,
-      status,
-    })
-    .returning();
-  return response as Fleet[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `INSERT INTO Fleet (id, invoice, departure, destination, status) VALUES (?, ?, ?, ?, ?)`,
+      params: [nanoid(), invoice_id, departure, destination, status],
+    }
+  );
+  const data = response.result[0].results as Fleet[];
+  return data;
 }
 
 export async function updateFleet(
@@ -316,27 +359,29 @@ export async function updateFleet(
   destination: string,
   status: FleetStatus
 ) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .update(FleetTable)
-    .set({
-      invoice: invoice_id,
-      departure,
-      destination,
-      status,
-    })
-    .where(eq(FleetTable.id, id))
-    .returning();
-  return response as Fleet[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `UPDATE Fleet SET invoice = ?, departure = ?, destination = ?, status = ? WHERE id = ?`,
+      params: [invoice_id, departure, destination, status, id],
+    }
+  );
+  const data = response.result[0].results as Fleet[];
+  return data;
 }
 
 export async function deleteFleet(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .delete(FleetTable)
-    .where(eq(FleetTable.id, id))
-    .returning();
-  return response as Fleet[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `DELETE FROM Fleet WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results as Fleet[];
+  return data;
 }
 
 /*
@@ -345,44 +390,56 @@ export async function deleteFleet(id: string) {
 */
 
 export async function getInvoices() {
-  const db = drizzle(process.env.DB);
-  const response = await db.select().from(InvoicesTable).all();
-  return response as Invoice[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Invoices`,
+    }
+  );
+  const data = response.result[0].results as Invoice[];
+  return data;
 }
 
 export async function getInvoiceById(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .select()
-    .from(InvoicesTable)
-    .where(eq(InvoicesTable.id, id))
-    .all();
-  return response as Invoice[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `SELECT * FROM Invoices WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results;
+  if (data === undefined) {
+    return null;
+  }
+
+  return data[0] as Invoice;
 }
 
 export async function addInvoice(order: [string, number][]) {
-  const db = drizzle(process.env.DB);
-  const id = nanoid();
-  const resposnes = [] as Invoice[];
-  for (const [key, value] of order) {
-    const response = await db
-      .insert(InvoicesTable)
-      .values({
-        id: id,
-        order_key: key,
-        order_value: value,
-      })
-      .returning();
-    resposnes.push(...(response as Invoice[]));
-  }
-  return resposnes;
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `INSERT INTO Invoices (id, order_key, order_value) VALUES (?, ?, ?)`,
+      params: [nanoid(), JSON.stringify(order), JSON.stringify(order)],
+    }
+  );
+  const data = response.result[0].results as Invoice[];
+  return data;
 }
 
 export async function deleteInvoice(id: string) {
-  const db = drizzle(process.env.DB);
-  const response = await db
-    .delete(InvoicesTable)
-    .where(eq(InvoicesTable.id, id))
-    .returning();
-  return response as Invoice[];
+  const response = await cloudflare.d1.database.query(
+    process.env.DATABASE_ID!,
+    {
+      account_id: process.env.ACCOUNT_ID!,
+      sql: `DELETE FROM Invoices WHERE id = ?`,
+      params: [id],
+    }
+  );
+  const data = response.result[0].results as Invoice[];
+  return data;
 }

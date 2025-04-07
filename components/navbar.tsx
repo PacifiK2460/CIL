@@ -1,12 +1,44 @@
 'use client'
 
-import { Avatar, Box, Card, Flex, IconButton, Separator, TabNav, Text, Tooltip } from '@radix-ui/themes'
+import { Avatar, Box, Card, Flex, IconButton, Separator, Spinner, TabNav, Text, Tooltip } from '@radix-ui/themes'
 import Image from 'next/image'
 import { ExitIcon } from '@radix-ui/react-icons'
 import { usePathname } from 'next/navigation';
+import { getPersonalById } from '@/lib/db';
+import { useEffect, useState } from 'react';
+import { Personal } from '@/lib/definitions';
 
 export default function Navbar() {
     const path = usePathname();
+    const [user, setUser] = useState<Personal | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Read cookie
+        const cookies = document.cookie.split('; ');
+        let userID = null;
+        for (const cookie of cookies) {
+            const [name, value] = cookie.split('=');
+            if (name === 'userID') {
+                userID = value;
+                break;
+            }
+        }
+
+        if (userID) {
+            getPersonalById(userID).then((res) => {
+                setUser(res);
+                setLoading(false);
+            }).catch((err) => {
+                console.error(err);
+                setLoading(false);
+            });
+        } else {
+            setLoading(false);
+        }
+    }, []);
+
+
     return (
         <div>
             <div className="h-20 flex items-center justify-between px-4 z-10">
@@ -43,6 +75,11 @@ export default function Navbar() {
                         }>
                             Flotas
                         </TabNav.Link>
+                        <TabNav.Link href="/invoice" active={
+                            path === '/invoice'
+                        }>
+                            Facturas
+                        </TabNav.Link>
                     </TabNav.Root>
                 </div>
                 <div>
@@ -53,7 +90,7 @@ export default function Navbar() {
                                     <Avatar
                                         size="3"
                                         radius="full"
-                                        fallback="ML"
+                                        fallback={user?.name ? user.name.charAt(0).toUpperCase() : ''}
                                     />
                                     <Box display={{
                                         initial: 'none',
@@ -61,12 +98,23 @@ export default function Navbar() {
                                     }}>
                                         <Flex gap="4">
                                             <Box>
-                                                <Text as="div" size="1" weight="bold">
-                                                    Santiago de la cruz Martinez Lara
-                                                </Text>
-                                                <Text as="div" size="1" color="gray">
-                                                    AQ1316
-                                                </Text>
+                                                {
+                                                    user && !loading ? (
+                                                        <>
+                                                            <Text as="div" size="1" weight="bold">
+                                                                {
+                                                                    user.name
+                                                                }
+                                                            </Text>
+                                                            <Text as="div" size="1" color="gray">
+                                                                {
+                                                                    user.id
+                                                                }
+                                                            </Text></>
+                                                    ) : (
+                                                        <Spinner />
+                                                    )
+                                                }
                                             </Box>
                                             <Tooltip content="Cerrar sesión">
                                                 <IconButton variant='outline' onClick={() => {

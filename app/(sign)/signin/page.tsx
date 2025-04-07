@@ -18,7 +18,7 @@ export default function SignIn() {
         const email = formData.get('username')
         const password = formData.get('password')
 
-        const res = (await login(email as string, password as string))[0];
+        const res = (await login(email as string, password as string));
         console.log('Response:', res)
         if (res) {
             console.log('Login successful')
@@ -29,8 +29,6 @@ export default function SignIn() {
             document.cookie = `userID=${userID}; path=/; expires=${expires.toUTCString()}`
 
             router.push('/')
-        } else {
-            console.error('Login failed')
         }
     }
 
@@ -76,7 +74,7 @@ export default function SignIn() {
                             </div>
 
                             <Button>
-                                <EnterIcon /> Bookmark
+                                <EnterIcon /> Iniciar Sesión
                             </Button>
 
                         </div>
