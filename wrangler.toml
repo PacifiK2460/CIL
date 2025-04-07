@@ -1,0 +1,8 @@
+main = "src/index.ts"
+compatibility_flags = [ "nodejs_compat" ]
+[[d1_databases]]
+binding = "DB"
+database_name = "fletes"
+database_id = "eb13b2de-d5e0-4728-b2e8-a43796195bae"
+
+migrations_dir = "./drizzle/"
