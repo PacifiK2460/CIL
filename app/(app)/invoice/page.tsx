@@ -19,6 +19,7 @@ export default function FleetCom() {
         const fetchData = async () => {
             const data = await getInvoices();
             setInvoices(data);
+            console.log("Invoices", JSON.parse(data[0].order_key)[0][0]);
 
             const productos = await getProducts();
             setProductos(productos);
@@ -37,6 +38,7 @@ export default function FleetCom() {
 
         };
         fetchData();
+
     }, [])
 
     return (
@@ -249,7 +251,11 @@ export default function FleetCom() {
                     <Table.Body>
                         {
                             invoices.map((invoice) => (
-                                JSON.parse(invoice.order_key).map((product: []) => (
+                                // JSON.parse(data[0].order_key)[0][0] -> invoice.id
+                                // JSON.parse(data[0].order_key)[0][1] -> invoice.order_value
+                                JSON.parse(invoice.order_key).map((
+                                    product: [string, number] // [id, quantity]
+                                ) => (
                                     <Table.Row key={invoice.id + product[0]}>
                                         <Table.Cell>{invoice.id}</Table.Cell>
                                         <Table.Cell>{
