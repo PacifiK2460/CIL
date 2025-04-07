@@ -4,7 +4,7 @@ import { Button, Dialog, Flex, Select, Table, Text, Tooltip } from "@radix-ui/th
 import { PlusIcon, Pencil1Icon, Cross1Icon, EyeOpenIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { Fleet, Invoice, FleetStatus } from "@/lib/definitions";
-import { getFleet, deleteFleet, updateFleet, addFleet, getInvoices } from "@/lib/db";
+import { getFleet, deleteFleet, addFleet, getInvoices } from "@/lib/db";
 import { Form } from "radix-ui";
 import { Slide, toast, ToastContainer } from "react-toastify";
 
