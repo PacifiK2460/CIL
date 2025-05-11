@@ -3,13 +3,8 @@
 import { Button, Dialog, Flex, Select, Table, Text, Tooltip } from "@radix-ui/themes";
 import { PlusIcon, Pencil1Icon, Cross1Icon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
 import { Fleet, Invoice, FleetStatus, Product } from "@/lib/definitions";
 import { getFleet, deleteFleet, updateFleet, addFleet, getInvoices, getProducts } from "@/lib/db";
-=======
-import { Fleet, Invoice, FleetStatus } from "@/lib/definitions";
-import { getFleet, deleteFleet, addFleet, getInvoices } from "@/lib/db";
->>>>>>> 1bcde9a4fc75c98738ffae5cd5bb88dd43e89839
 import { Form } from "radix-ui";
 import { Slide, toast, ToastContainer } from "react-toastify";
 
@@ -237,7 +232,7 @@ export default function FleetCom() {
                                 event.preventDefault();
                                 const formData = new FormData(event.currentTarget);
 
-                                const invoice = formData.get('provider') as string;
+                                const invoice = selectedFleet?.invoice as string;
                                 const departure = formData.get('exit') as string;
                                 const destination = formData.get('rol') as string;
                                 const status = formData.get('status') as FleetStatus;
