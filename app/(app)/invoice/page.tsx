@@ -26,6 +26,7 @@ export default function FleetCom() {
         const fetchData = async () => {
             const data = await getInvoices();
             setInvoices(data);
+            console.log("Invoices", JSON.parse(data[0].order_key)[0][0]);
 
             const productos = await getProducts();
             setProductos(productos);
@@ -44,6 +45,7 @@ export default function FleetCom() {
 
         };
         fetchData();
+
     }, [])
 
     return (
@@ -419,6 +421,7 @@ export default function FleetCom() {
 
                     <Table.Body>
                         {
+<<<<<<< HEAD
                             groupedInvoices.map((invoiceId) => {
                                 const groupedInvoices = invoices.filter((inv) => inv.id === invoiceId)
 
@@ -501,6 +504,51 @@ export default function FleetCom() {
                                                     </Button>
                                                 </Tooltip>
                                             </Flex>
+=======
+                            invoices.map((invoice) => (
+                                // JSON.parse(data[0].order_key)[0][0] -> invoice.id
+                                // JSON.parse(data[0].order_key)[0][1] -> invoice.order_value
+                                JSON.parse(invoice.order_key).map((
+                                    product: [string, number] // [id, quantity]
+                                ) => (
+                                    <Table.Row key={invoice.id + product[0]}>
+                                        <Table.Cell>{invoice.id}</Table.Cell>
+                                        <Table.Cell>{
+                                            productos.find((producto) => producto.id === product[0])?.name
+                                        }</Table.Cell>
+                                        <Table.Cell>{product[1]}</Table.Cell>
+                                        <Table.Cell className="flex gap-2">
+                                            <Tooltip content="Editar Factura (PROXIMAMENTE)" side="top" align="center">
+                                                <Button variant="soft" size="1" color="gray" className="w-8 h-8">
+                                                    <Pencil1Icon />
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip content="Eliminar Producto de Factura (PROXIMAMENTE)" side="top" align="center">
+                                                <Button variant="soft" size="1" color="red" className="w-8 h-8"
+                                                // onClick={async () => {
+                                                //     const res = await deleteInvoice(invoice.id)
+                                                //     if (res) {
+                                                //         const invoices = await getInvoices()
+                                                //         setInvoices(invoices)
+                                                //         toast.success(
+                                                //             'Factura ' + invoice.id + ' eliminada correctamente', {
+                                                //             position: "bottom-right",
+                                                //             autoClose: 5000,
+                                                //             hideProgressBar: false,
+                                                //             closeOnClick: false,
+                                                //             pauseOnHover: true,
+                                                //             draggable: true,
+                                                //             progress: undefined,
+                                                //             theme: "light",
+                                                //             transition: Slide,
+                                                //         });
+                                                //     }
+                                                // }}
+                                                >
+                                                    <Cross1Icon />
+                                                </Button>
+                                            </Tooltip>
+>>>>>>> 1bcde9a4fc75c98738ffae5cd5bb88dd43e89839
                                         </Table.Cell>
                                     </Table.Row>
                                 )
