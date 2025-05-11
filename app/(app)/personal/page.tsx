@@ -201,9 +201,9 @@ export default function PersonalComp() {
 
             }>
                 <Dialog.Content>
-                    <Dialog.Title>Agregar Personal</Dialog.Title>
+                    <Dialog.Title>Editar Personal</Dialog.Title>
                     <Dialog.Description>
-                        Completa el formulario para agregar un nuevo integrante al personal de la tienda.
+                        Completa el formulario para editar al personal de la tienda.
                     </Dialog.Description>
 
                     <Flex direction="column" gap="3" className="w-full">
@@ -392,7 +392,7 @@ export default function PersonalComp() {
                                     <Table.Cell>{per.address}</Table.Cell>
                                     <Table.Cell>
                                         <Flex direction="row" align="center" className="gap-2 w-5">
-                                            <Tooltip content="Editar producto" side="top" align="center">
+                                            <Tooltip content="Editar personal" side="top" align="center">
                                                 <Button variant="outline"
                                                     onClick={() => {
                                                         setSelectedPersonal(per)
@@ -403,7 +403,7 @@ export default function PersonalComp() {
                                                 </Button>
                                             </Tooltip>
 
-                                            <Tooltip content="Eliminar producto" side="top" align="center">
+                                            <Tooltip content="Eliminar personal" side="top" align="center">
                                                 <Button variant="outline" color="red"
                                                     onClick={() => {
                                                         deletePersonal(per.id)

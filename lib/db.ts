@@ -418,17 +418,81 @@ export async function getInvoiceById(id: string) {
   return data[0] as Invoice;
 }
 
-export async function addInvoice(order: [string, number][]) {
+export async function addInvoice(order: Invoice[]) {
+  if (order.length === 0) {
+    return null;
+  }
+
+  console.log("Adding invoice: ", order);
+  const invoiceId = nanoid();
+
+  order.map(async (item) => {
+    const response = await cloudflare.d1.database.query(
+      process.env.DATABASE_ID!,
+      {
+        account_id: process.env.ACCOUNT_ID!,
+        sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
+        params: [
+          invoiceId,
+          nanoid(),
+          item.productId,
+          numberToString(item.quantity),
+        ],
+      }
+    );
+
+    console.log("Adding invoice item", item);
+
+    // If error, return null
+    if (response.result[0].success === false) {
+      return null;
+    }
+  });
+
+  return order;
+}
+
+export async function updateInvoice(order: Invoice[]) {
+  console.log("Updating invoice: ", order);
+  // Delete all items in the invoice, then add the new items
   const response = await cloudflare.d1.database.query(
     process.env.DATABASE_ID!,
     {
       account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Invoices (id, order_key, order_value) VALUES (?, ?, ?)`,
-      params: [nanoid(), JSON.stringify(order), JSON.stringify(order)],
+      sql: `DELETE FROM Invoices WHERE id = ?`,
+      params: [order[0].id],
     }
   );
-  const data = response.result[0].results as Invoice[];
-  return data;
+
+  if (response.result[0].success === false) {
+    return null;
+  }
+
+  order.map(async (item) => {
+    // If the invoiceItemId is not set, set it to a new id
+    if (item.invoiceItemId === undefined || item.invoiceItemId === "") {
+      item.invoiceItemId = nanoid();
+    }
+
+    const response = await cloudflare.d1.database.query(
+      process.env.DATABASE_ID!,
+      {
+        account_id: process.env.ACCOUNT_ID!,
+        sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
+        params: [
+          item.id,
+          item.invoiceItemId,
+          item.productId,
+          numberToString(item.quantity),
+        ],
+      }
+    );
+
+    // If error, return null
+    if (response.result[0].success === false) {
+      return null;
+    }
+  });
 }
 
 export async function deleteInvoice(id: string) {

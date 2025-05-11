@@ -29,11 +29,11 @@ export enum FleetStatus {
     Delivered = "Entregado",
     Cancelled = "Cancelado",
 }
-
 export interface Invoice {
   id: string;
-  order_key: string;
-  order_value: number;
+  invoiceItemId: string;
+  productId: string;
+  quantity: number;
 }
 
 export interface Fleet {
