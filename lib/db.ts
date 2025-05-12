@@ -34,33 +34,41 @@ function numberToString(num: number) {
 */
 
 export async function getPersonal() {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Personal`,
-    }
-  );
-
-  const data = response.result[0].results as Personal[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Personal`,
+  //   }
+  // );
+  const response = await fetch("http://localhost:3001/api/personal");
+  const data = (await response.json()) as Personal[];
+  console.log("Response from API: ", data);
   return data;
 }
 
 export async function getPersonalById(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Personal WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Personal WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results;
+  // if (data === undefined) {
+  //   return null;
+  // }
+
+  // return data[0] as Personal;
+  const response = await fetch(`http://localhost:3001/api/personal/${id}`);
+  const data = (await response.json()) as Personal[];
   if (data === undefined) {
     return null;
   }
-
-  return data[0] as Personal;
+  console.log("GPBYD: Response from API: ", data);
+  return data;
 }
 
 export async function addPersonal(
@@ -70,15 +78,33 @@ export async function addPersonal(
   rol: string,
   password: string
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Personal (id, name, email, address, rol, password) VALUES (?, ?, ?, ?, ?, ?)`,
-      params: [nanoid(), name, email, address, rol, password],
-    }
-  );
-  const data = response.result[0].results as Personal[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `INSERT INTO Personal (id, name, email, address, rol, password) VALUES (?, ?, ?, ?, ?, ?)`,
+  //     params: [nanoid(), name, email, address, rol, password],
+  //   }
+  // );
+  // const data = response.result[0].results as Personal[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/personal", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: nanoid(),
+      name,
+      email,
+      address,
+      rol,
+      password,
+    }),
+  });
+
+  const data = (await response.json()) as Personal[];
+  console.log("AP Response from API: ", data);
   return data;
 }
 
@@ -90,45 +116,85 @@ export async function updatePersonal(
   rol: string,
   password: string
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `UPDATE Personal SET name = ?, email = ?, address = ?, rol = ?, password = ? WHERE id = ?`,
-      params: [name, email, address, rol, password, id],
-    }
-  );
-  const data = response.result[0].results as Personal[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `UPDATE Personal SET name = ?, email = ?, address = ?, rol = ?, password = ? WHERE id = ?`,
+  //     params: [name, email, address, rol, password, id],
+  //   }
+  // );
+  // const data = response.result[0].results as Personal[];
+  // return data;
+
+  const response = await fetch(`http://localhost:3001/api/personal/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      name,
+      email,
+      address,
+      rol,
+      password,
+    }),
+  });
+  const data = (await response.json()) as Personal[];
+  console.log("UP Response from API: ", data);
   return data;
 }
 
 export async function deletePersonal(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `DELETE FROM Personal WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results as Personal[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `DELETE FROM Personal WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results as Personal[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/personal/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = (await response.json()) as Personal[];
+  console.log("DP Response from API: ", data);
   return data;
 }
 
 export async function login(email: string, password: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Personal WHERE name = ? AND password = ?`,
-      params: [email, password],
-    }
-  );
-  const data = response.result[0].results as Personal[];
-  if (data.length === 0) {
-    return null;
-  }
-  return data[0] as Personal;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Personal WHERE name = ? AND password = ?`,
+  //     params: [email, password],
+  //   }
+  // );
+  // const data = response.result[0].results as Personal[];
+  // if (data.length === 0) {
+  //   return null;
+  // }
+  // return data[0] as Personal;
+  const response = await fetch("http://localhost:3001/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+  const data = (await response.json()) as Personal[];
+  console.log("Login Response from API: ", data);
+  return data;
 }
 
 /*
@@ -137,81 +203,133 @@ export async function login(email: string, password: string) {
 */
 
 export async function getProducts() {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Products`,
-    }
-  );
-  const data = response.result[0].results as Product[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Products`,
+  //   }
+  // );
+  // const data = response.result[0].results as Product[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/products");
+  const data = (await response.json()) as Product[];
+  console.log("Response from API: ", data);
   return data;
 }
 
 export async function getProductById(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Products WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Products WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results;
+  // if (data === undefined) {
+  //   return null;
+  // }
+
+  // return data[0] as Product;
+  const response = await fetch(`http://localhost:3001/api/products/${id}`);
+  const data = (await response.json()) as Product[];
   if (data === undefined) {
     return null;
   }
-
-  return data[0] as Product;
+  console.log("GPBYD: Response from API: ", data);
+  return data;
 }
 
 export async function addProduct(
-  provider_id: string,
+  provider: string,
   name: string,
   quantity: number,
   location: string
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Products (id, provider, name, quantity, location) VALUES (?, ?, ?, ?, ?)`,
-      params: [nanoid(), provider_id, name, numberToString(quantity), location],
-    }
-  );
-  const data = response.result[0].results as Product[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `INSERT INTO Products (id, provider, name, quantity, location) VALUES (?, ?, ?, ?, ?)`,
+  //     params: [nanoid(), provider_id, name, numberToString(quantity), location],
+  //   }
+  // );
+  // const data = response.result[0].results as Product[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/products", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: nanoid(),
+      provider,
+      name,
+      quantity,
+      location,
+    }),
+  });
+  const data = (await response.json()) as Product[];
+  console.log("AP Response from API: ", data);
   return data;
 }
 
 export async function updateProduct(
   id: string,
-  provider_id: string,
+  provider: string,
   name: string,
   quantity: number,
   location: string
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `UPDATE Products SET provider = ?, name = ?, quantity = ?, location = ? WHERE id = ?`,
-      params: [provider_id, name, numberToString(quantity), location, id],
-    }
-  );
-  const data = response.result[0].results as Product[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `UPDATE Products SET provider = ?, name = ?, quantity = ?, location = ? WHERE id = ?`,
+  //     params: [provider_id, name, numberToString(quantity), location, id],
+  //   }
+  // );
+  // const data = response.result[0].results as Product[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/products/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      provider,
+      name,
+      quantity,
+      location,
+    }),
+  });
+  const data = (await response.json()) as Product[];
+  console.log("UP Response from API: ", data);
   return data;
 }
 
 export async function deleteProduct(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `DELETE FROM Products WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results as Product[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `DELETE FROM Products WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results as Product[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/products/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = (await response.json()) as Product[];
+  console.log("DP Response from API: ", data);
   return data;
 }
 
@@ -221,32 +339,43 @@ export async function deleteProduct(id: string) {
 */
 
 export async function getProviders() {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Providers`,
-    }
-  );
-  const data = response.result[0].results as Provider[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Providers`,
+  //   }
+  // );
+  // const data = response.result[0].results as Provider[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/providers");
+  const data = (await response.json()) as Provider[];
+  console.log("Response from API: ", data);
   return data;
 }
 
 export async function getProviderById(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Providers WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Providers WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results;
+  // if (data === undefined) {
+  //   return null;
+  // }
+
+  // return data[0] as Provider;
+  const response = await fetch(`http://localhost:3001/api/providers/${id}`);
+  const data = (await response.json()) as Provider[];
   if (data === undefined) {
     return null;
   }
-
-  return data[0] as Provider;
+  console.log("GPBYD: Response from API: ", data);
+  return data;
 }
 
 export async function addProvider(
@@ -255,15 +384,31 @@ export async function addProvider(
   phone: string,
   email: string
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Providers (id, name, address, phone, email) VALUES (?, ?, ?, ?, ?)`,
-      params: [nanoid(), name, address, phone, email],
-    }
-  );
-  const data = response.result[0].results as Provider[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `INSERT INTO Providers (id, name, address, phone, email) VALUES (?, ?, ?, ?, ?)`,
+  //     params: [nanoid(), name, address, phone, email],
+  //   }
+  // );
+  // const data = response.result[0].results as Provider[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/providers", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: nanoid(),
+      name,
+      address,
+      phone,
+      email,
+    }),
+  });
+  const data = (await response.json()) as Provider[];
+  console.log("AP Response from API: ", data);
   return data;
 }
 
@@ -274,29 +419,56 @@ export async function updateProvider(
   phone: string,
   email: string
 ) {
-  console.log("Adding provider", id, name, address, phone, email);
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `UPDATE Providers SET name = ?, address = ?, phone = ?, email = ? WHERE id = ?`,
-      params: [name, address, phone, email, id],
-    }
-  );
-  const data = response.result[0].results as Provider[];
+  // console.log("Adding provider", id, name, address, phone, email);
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `UPDATE Providers SET name = ?, address = ?, phone = ?, email = ? WHERE id = ?`,
+  //     params: [name, address, phone, email, id],
+  //   }
+  // );
+  // const data = response.result[0].results as Provider[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/providers/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      name,
+      address,
+      phone,
+      email,
+    }),
+  });
+  const data = (await response.json()) as Provider[];
+  console.log("UP Response from API: ", data);
   return data;
+  
 }
 
 export async function deleteProvider(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `DELETE FROM Providers WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results as Provider[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `DELETE FROM Providers WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results as Provider[];
+  // return data;
+
+  const response = await fetch(`http://localhost:3001/api/providers/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = (await response.json()) as Provider[];
+  console.log("DP Response from API: ", data);
   return data;
 }
 
@@ -306,81 +478,133 @@ export async function deleteProvider(id: string) {
 */
 
 export async function getFleet() {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Fleet`,
-    }
-  );
-  const data = response.result[0].results as Fleet[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Fleet`,
+  //   }
+  // );
+  // const data = response.result[0].results as Fleet[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/fleet");
+  const data = (await response.json()) as Fleet[];
+  console.log("Response from API: ", data);
   return data;
 }
 
 export async function getFleetById(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Fleet WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Fleet WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results;
+  // if (data === undefined) {
+  //   return null;
+  // }
+
+  // return data[0] as Fleet;
+  const response = await fetch(`http://localhost:3001/api/fleet/${id}`);
+  const data = (await response.json()) as Fleet[];
   if (data === undefined) {
     return null;
   }
-
-  return data[0] as Fleet;
+  console.log("GPBYD: Response from API: ", data);
+  return data;
 }
 
 export async function addFleet(
-  invoice_id: string,
+  invoice: string,
   departure: string,
   destination: string,
   status: FleetStatus
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Fleet (id, invoice, departure, destination, status) VALUES (?, ?, ?, ?, ?)`,
-      params: [nanoid(), invoice_id, departure, destination, status],
-    }
-  );
-  const data = response.result[0].results as Fleet[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `INSERT INTO Fleet (id, invoice, departure, destination, status) VALUES (?, ?, ?, ?, ?)`,
+  //     params: [nanoid(), invoice_id, departure, destination, status],
+  //   }
+  // );
+  // const data = response.result[0].results as Fleet[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/fleet", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: nanoid(),
+      invoice,
+      departure,
+      destination,
+      status,
+    }),
+  });
+  const data = (await response.json()) as Fleet[];
+  console.log("AP Response from API: ", data);
   return data;
 }
 
 export async function updateFleet(
   id: string,
-  invoice_id: string,
+  invoice: string,
   departure: string,
   destination: string,
   status: FleetStatus
 ) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `UPDATE Fleet SET invoice = ?, departure = ?, destination = ?, status = ? WHERE id = ?`,
-      params: [invoice_id, departure, destination, status, id],
-    }
-  );
-  const data = response.result[0].results as Fleet[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `UPDATE Fleet SET invoice = ?, departure = ?, destination = ?, status = ? WHERE id = ?`,
+  //     params: [invoice_id, departure, destination, status, id],
+  //   }
+  // );
+  // const data = response.result[0].results as Fleet[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/fleet/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      invoice,
+      departure,
+      destination,
+      status,
+    }),
+  });
+  const data = (await response.json()) as Fleet[];
+  console.log("UP Response from API: ", data);
   return data;
 }
 
 export async function deleteFleet(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `DELETE FROM Fleet WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results as Fleet[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `DELETE FROM Fleet WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results as Fleet[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/fleet/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = (await response.json()) as Fleet[];
+  console.log("DP Response from API: ", data);
   return data;
 }
 
@@ -390,32 +614,43 @@ export async function deleteFleet(id: string) {
 */
 
 export async function getInvoices() {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Invoices`,
-    }
-  );
-  const data = response.result[0].results as Invoice[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Invoices`,
+  //   }
+  // );
+  // const data = response.result[0].results as Invoice[];
+  // return data;
+  const response = await fetch("http://localhost:3001/api/invoices");
+  const data = (await response.json()) as Invoice[];
+  console.log("Response from API: ", data);
   return data;
 }
 
 export async function getInvoiceById(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `SELECT * FROM Invoices WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results;
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `SELECT * FROM Invoices WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results;
+  // if (data === undefined) {
+  //   return null;
+  // }
+
+  // return data[0] as Invoice;
+  const response = await fetch(`http://localhost:3001/api/invoices/${id}`);
+  const data = (await response.json()) as Invoice[];
   if (data === undefined) {
     return null;
   }
-
-  return data[0] as Invoice;
+  console.log("GPBYD: Response from API: ", data);
+  return data;
 }
 
 export async function addInvoice(order: Invoice[]) {
@@ -427,24 +662,42 @@ export async function addInvoice(order: Invoice[]) {
   const invoiceId = nanoid();
 
   order.map(async (item) => {
-    const response = await cloudflare.d1.database.query(
-      process.env.DATABASE_ID!,
-      {
-        account_id: process.env.ACCOUNT_ID!,
-        sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
-        params: [
-          invoiceId,
-          nanoid(),
-          item.productId,
-          numberToString(item.quantity),
-        ],
-      }
-    );
+    // const response = await cloudflare.d1.database.query(
+    //   process.env.DATABASE_ID!,
+    //   {
+    //     account_id: process.env.ACCOUNT_ID!,
+    //     sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
+    //     params: [
+    //       invoiceId,
+    //       nanoid(),
+    //       item.productId,
+    //       numberToString(item.quantity),
+    //     ],
+    //   }
+    // );
 
-    console.log("Adding invoice item", item);
+    // console.log("Adding invoice item", item);
 
-    // If error, return null
-    if (response.result[0].success === false) {
+    // // If error, return null
+    // if (response.result[0].success === false) {
+    //   return null;
+    // }
+
+    const response = await fetch("http://localhost:3001/api/invoices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: invoiceId,
+        invoiceItemId: nanoid(),
+        productId: item.productId,
+        quantity: numberToString(item.quantity),
+      }),
+    });
+    const data = (await response.json()) as Invoice[];
+    console.log("AP Response from API: ", data);
+    if (data === undefined) {
       return null;
     }
   });
@@ -474,36 +727,64 @@ export async function updateInvoice(order: Invoice[]) {
       item.invoiceItemId = nanoid();
     }
 
-    const response = await cloudflare.d1.database.query(
-      process.env.DATABASE_ID!,
-      {
-        account_id: process.env.ACCOUNT_ID!,
-        sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
-        params: [
-          item.id,
-          item.invoiceItemId,
-          item.productId,
-          numberToString(item.quantity),
-        ],
-      }
-    );
+    // const response = await cloudflare.d1.database.query(
+    //   process.env.DATABASE_ID!,
+    //   {
+    //     account_id: process.env.ACCOUNT_ID!,
+    //     sql: `INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)`,
+    //     params: [
+    //       item.id,
+    //       item.invoiceItemId,
+    //       item.productId,
+    //       numberToString(item.quantity),
+    //     ],
+    //   }
+    // );
 
-    // If error, return null
-    if (response.result[0].success === false) {
+    // // If error, return null
+    // if (response.result[0].success === false) {
+    //   return null;
+    // }
+
+    const response = await fetch("http://localhost:3001/api/invoices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: item.id,
+        invoiceItemId: item.invoiceItemId,
+        productId: item.productId,
+        quantity: numberToString(item.quantity),
+      }),
+    });
+    const data = (await response.json()) as Invoice[];
+    console.log("AP Response from API: ", data);
+    if (data === undefined) {
       return null;
     }
+    
   });
 }
 
 export async function deleteInvoice(id: string) {
-  const response = await cloudflare.d1.database.query(
-    process.env.DATABASE_ID!,
-    {
-      account_id: process.env.ACCOUNT_ID!,
-      sql: `DELETE FROM Invoices WHERE id = ?`,
-      params: [id],
-    }
-  );
-  const data = response.result[0].results as Invoice[];
+  // const response = await cloudflare.d1.database.query(
+  //   process.env.DATABASE_ID!,
+  //   {
+  //     account_id: process.env.ACCOUNT_ID!,
+  //     sql: `DELETE FROM Invoices WHERE id = ?`,
+  //     params: [id],
+  //   }
+  // );
+  // const data = response.result[0].results as Invoice[];
+  // return data;
+  const response = await fetch(`http://localhost:3001/api/invoices/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = (await response.json()) as Invoice[];
+  console.log("DP Response from API: ", data);
   return data;
 }
