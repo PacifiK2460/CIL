@@ -462,7 +462,7 @@ export default function FleetCom() {
                                                         // Set the selected products to the selected invoice
                                                         const selectedProducts = selectedInvoice?.map((item) => {
                                                             return {
-                                                                Prod: productos.find((prod) => prod.id === item.productId) || { id: "", name: "", provider: "", quantity: 0, location: "" },
+                                                                Prod: productos.find((prod) => prod.id === item.productId) || { id: "", name: "", provider: "", quantity: 0, location: "", Price: 0 },
                                                                 Qnty: item.quantity,
                                                                 Selected: true
                                                             }
