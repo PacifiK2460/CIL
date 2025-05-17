@@ -4,6 +4,7 @@ export interface Product {
   name: string;
   quantity: number;
   location: string;
+  Price: number;
 }
 
 export interface Provider {
@@ -24,10 +25,10 @@ export interface Personal {
 }
 
 export enum FleetStatus {
-    Pending = "Pendiente",
-    InTransit = "En tránsito",
-    Delivered = "Entregado",
-    Cancelled = "Cancelado",
+  Pending = "Pendiente",
+  InTransit = "En tránsito",
+  Delivered = "Entregado",
+  Cancelled = "Cancelado",
 }
 export interface Invoice {
   id: string;

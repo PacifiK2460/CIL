@@ -169,14 +169,15 @@ export async function addProduct(
   provider_id: string,
   name: string,
   quantity: number,
-  location: string
+  location: string,
+  price: number
 ) {
   const response = await cloudflare.d1.database.query(
     process.env.DATABASE_ID!,
     {
       account_id: process.env.ACCOUNT_ID!,
-      sql: `INSERT INTO Products (id, provider, name, quantity, location) VALUES (?, ?, ?, ?, ?)`,
-      params: [nanoid(), provider_id, name, numberToString(quantity), location],
+      sql: `INSERT INTO Products (id, provider, name, quantity, location, Price) VALUES (?, ?, ?, ?, ?, ?)`,
+      params: [nanoid(), provider_id, name, numberToString(quantity), location, numberToString(price)],
     }
   );
   const data = response.result[0].results as Product[];
@@ -188,14 +189,15 @@ export async function updateProduct(
   provider_id: string,
   name: string,
   quantity: number,
-  location: string
+  location: string,
+  price: number
 ) {
   const response = await cloudflare.d1.database.query(
     process.env.DATABASE_ID!,
     {
       account_id: process.env.ACCOUNT_ID!,
-      sql: `UPDATE Products SET provider = ?, name = ?, quantity = ?, location = ? WHERE id = ?`,
-      params: [provider_id, name, numberToString(quantity), location, id],
+      sql: `UPDATE Products SET provider = ?, name = ?, quantity = ?, location = ?, Price = ? WHERE id = ?`,
+      params: [provider_id, name, numberToString(quantity), location, id, numberToString(price)],
     }
   );
   const data = response.result[0].results as Product[];

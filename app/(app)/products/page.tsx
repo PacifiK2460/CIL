@@ -64,11 +64,13 @@ export default function Products() {
                                         const nombre = formData.get('nombre');
                                         const quantity = formData.get('quantity');
                                         const location = formData.get('location');
+                                        const price = formData.get('price');
                                         const res = await addProduct(
                                             provider as string,
                                             nombre as string,
                                             Number(quantity) || 0,
-                                            location as string
+                                            location as string,
+                                            Number(price) || 0
                                         )
                                         console.log('Response:', res);
                                         if (res) {
@@ -191,6 +193,23 @@ export default function Products() {
                                         </Form.Control>
                                     </Form.Field>
 
+
+                                    <Form.Field className="FormField" name="price">
+                                        <Form.Label className="FormLabel" asChild>
+                                            <Text as="div" size="3" mb="1" weight="bold">
+                                                Precio
+                                            </Text>
+                                        </Form.Label>
+                                        <Form.Message className="FormMessage" match="valueMissing">
+                                            <Text size="1" color="red" weight="regular" >
+                                                Ingresa un precio
+                                            </Text>
+                                        </Form.Message>
+                                        <Form.Control asChild className="w-full">
+                                            <input type="number" required placeholder="Ingresa un precio" />
+                                        </Form.Control>
+                                    </Form.Field>
+
                                     <Flex gap="3" mt="4" justify="between">
                                         <Dialog.Close>
                                             <Button variant="soft" color="gray">
@@ -234,6 +253,7 @@ export default function Products() {
                                 const nombre = formData.get('nombre');
                                 const quantity = formData.get('quantity');
                                 const location = formData.get('location');
+                                const price = formData.get('price');
 
 
                                 const res = await updateProduct(
@@ -241,7 +261,8 @@ export default function Products() {
                                     provider as string,
                                     nombre as string,
                                     Number(quantity) || 0,
-                                    location as string
+                                    location as string,
+                                    Number(price) || 0
                                 )
                                 console.log('Response:', res);
                                 if (res) {
@@ -372,6 +393,25 @@ export default function Products() {
                                 </Form.Control>
                             </Form.Field>
 
+                            <Form.Field className="FormField" name="price">
+                                <Form.Label className="FormLabel" asChild>
+                                    <Text as="div" size="3" mb="1" weight="bold">
+                                        Precio
+                                    </Text>
+                                </Form.Label>
+                                <Form.Message className="FormMessage" match="valueMissing">
+                                    <Text size="1" color="red" weight="regular" >
+                                        Ingresa un precio
+                                    </Text>
+                                </Form.Message>
+                                <Form.Control asChild className="w-full">
+                                    <input type="number" required placeholder="Ingresa un precio"
+                                        defaultValue={selectedProduct?.Price || 0}
+                                        content={String(selectedProduct?.Price) || "0"}
+                                    />
+                                </Form.Control>
+                            </Form.Field>
+
                             <Flex gap="3" mt="4" justify="between">
                                 <Dialog.Close>
                                     <Button variant="soft" color="gray"
@@ -402,6 +442,7 @@ export default function Products() {
                             <Table.ColumnHeaderCell>ID</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Proveedor</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Producto</Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell>Precio</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Cantidad en Inventario</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Ubicación</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Acción</Table.ColumnHeaderCell>
@@ -417,6 +458,7 @@ export default function Products() {
                                         proveedores.find((proveedor) => proveedor.id === producto.provider)?.name || 'Proveedor no encontrado'
                                     }</Table.Cell>
                                     <Table.Cell>{producto.name}</Table.Cell>
+                                    <Table.Cell>{producto.Price}</Table.Cell>
                                     <Table.Cell>{producto.quantity}</Table.Cell>
                                     <Table.Cell>{producto.location}</Table.Cell>
                                     <Table.Cell>
