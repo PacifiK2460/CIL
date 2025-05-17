@@ -79,39 +79,6 @@ export default function FleetCom() {
                             <Flex direction="column" gap="3" className="w-full">
                                 <Form.Root className="FormRoot"
                                     onSubmit={async () => {
-                                        const selectedProductsFiltered = selectedProducts.filter((product) => product.Selected);
-                                        console.log("Selected", selectedProductsFiltered);
-
-
-                                        // const nombre = formData.get('nombre');
-                                        // const correo = formData.get('correo');
-                                        // const rol = formData.get('rol');
-                                        // const direccion = formData.get('direccion');
-                                        // const password = formData.get('password');
-
-                                        // const res = await addPersonal(
-                                        //     nombre as string,
-                                        //     correo as string,
-                                        //     rol as string,
-                                        //     direccion as string,
-                                        //     password as string
-                                        // )
-                                        // if (res) {
-                                        //     const personal = await getPersonal()
-                                        //     setPersonal(personal)
-                                        //     toast.success(
-                                        //         'Personal ' + nombre + ' agregado correctamente', {
-                                        //         position: "bottom-right",
-                                        //         autoClose: 5000,
-                                        //         hideProgressBar: false,
-                                        //         closeOnClick: false,
-                                        //         pauseOnHover: true,
-                                        //         draggable: true,
-                                        //         progress: undefined,
-                                        //         theme: "light",
-                                        //         transition: Slide,
-                                        //     });
-                                        // }
                                     }}
                                 >
 
@@ -135,14 +102,15 @@ export default function FleetCom() {
 
                                         <ScrollArea type="always" scrollbars="vertical" className="h-full">
                                             <Flex direction="column">
-                                                <CheckboxCards.Root defaultValue={["0"]} columns={{ initial: "1" }}
+                                                <CheckboxCards.Root defaultValue={[]} columns={{ initial: "1" }}
                                                     className="CheckboxCardsRoot"
                                                     onValueChange={(value) => {
+                                                        // Value is an array of selected product ids
                                                         // Change the selected product state based on the checkbox value
-                                                        const selectedProducts = productos.map((producto, Qnty) => {
+                                                        const selectedProducts = productos.map((producto) => {
                                                             return {
                                                                 Prod: producto,
-                                                                Qnty: Qnty,
+                                                                Qnty: 0,
                                                                 Selected: value.includes(producto.id)
                                                             }
                                                         })
@@ -158,20 +126,27 @@ export default function FleetCom() {
                                                                         Cantidad
                                                                     </Text>
                                                                     <input type="number"
-                                                                        min={1}
+                                                                        defaultValue={0}
+                                                                        content="0"
+                                                                        min={0}
                                                                         max={
                                                                             producto.quantity
                                                                         } className="font-extralight" required placeholder="Cantidad a facturar"
                                                                         onChange={(e) => {
                                                                             const value = parseInt(e.target.value);
-                                                                            setSelectedProducts((prev) => {
-                                                                                const newProducts = [...prev];
-                                                                                const index = newProducts.findIndex((p) => p.Prod.id === producto.id);
-                                                                                if (index !== -1) {
-                                                                                    newProducts[index].Qnty = value;
+
+                                                                            const _Selected = selectedProducts.map((product) => {
+                                                                                if (product.Prod.id === producto.id) {
+                                                                                    return {
+                                                                                        ...product,
+                                                                                        Qnty: value
+                                                                                    }
                                                                                 }
-                                                                                return newProducts;
-                                                                            });
+                                                                                return product;
+                                                                            })
+
+                                                                            setSelectedProducts(_Selected);
+
                                                                         }}
                                                                     />
                                                                 </Flex>
@@ -291,11 +266,14 @@ export default function FleetCom() {
                                             className="CheckboxCardsRoot"
                                             onValueChange={(value) => {
                                                 // Change the selected product state based on the checkbox value
-                                                const selectedProducts = productos.map((producto, Qnty) => {
+                                                console.log("Value", value);
+                                                console.log("Selected Invoic", selectedInvoice);
+
+                                                const selectedProducts = productos.map((producto) => {
                                                     return {
                                                         Prod: producto,
-                                                        Qnty: Qnty,
-                                                        Selected: value.includes(producto.id)
+                                                        Selected: value.includes(producto.id),
+                                                        Qnty: selectedInvoice?.find((inv) => inv.productId === producto.id)?.quantity || 0
                                                     }
                                                 })
 
@@ -320,14 +298,18 @@ export default function FleetCom() {
                                                                 } className="font-extralight" required placeholder="Cantidad a facturar"
                                                                 onChange={(e) => {
                                                                     const value = parseInt(e.target.value);
-                                                                    setSelectedProducts((prev) => {
-                                                                        const newProducts = [...prev];
-                                                                        const index = newProducts.findIndex((p) => p.Prod.id === producto.id);
-                                                                        if (index !== -1) {
-                                                                            newProducts[index].Qnty = value;
+
+                                                                    const _Selected = selectedProducts.map((product) => {
+                                                                        if (product.Prod.id === producto.id) {
+                                                                            return {
+                                                                                ...product,
+                                                                                Qnty: value
+                                                                            }
                                                                         }
-                                                                        return newProducts;
-                                                                    });
+                                                                        return product;
+                                                                    })
+
+                                                                    setSelectedProducts(_Selected);
                                                                 }}
                                                             />
                                                         </Flex>
@@ -359,16 +341,16 @@ export default function FleetCom() {
                                 <Dialog.Close>
                                     <Button
                                         onClick={async () => {
+                                            if(selectedInvoice === null) return;
 
+                                            console.log("Selected Products", selectedProducts);
                                             const selectedProductsFiltered = selectedProducts.filter((product) => product.Selected && product.Qnty > 0);
                                             console.log("Selected", selectedProductsFiltered);
 
                                             const newInvoice: Invoice[] = selectedProductsFiltered.map((product) => {
                                                 return {
-                                                    id: selectedInvoice && selectedInvoice[0] ? selectedInvoice[0].id : "",
-                                                    invoiceItemId: selectedInvoice ?
-                                                        selectedInvoice.find((inv) => inv.productId === product.Prod.id)?.invoiceItemId || ""
-                                                        : "",
+                                                    id: selectedInvoice.find((inv) => inv.productId === product.Prod.id)?.id || "",
+                                                    invoiceItemId: selectedInvoice.find((inv) => inv.productId === product.Prod.id)?.invoiceItemId || "",
                                                     productId: product.Prod.id,
                                                     quantity: product.Qnty
                                                 }
@@ -455,6 +437,8 @@ export default function FleetCom() {
                                                 <Tooltip content="Editar" side="top" align="center">
                                                     <Button variant="soft" size="1" onClick={() => {
                                                         const selectedInvoice = invoices.filter((inv) => inv.id === invoiceId)
+                                                        console.log("Invoices", invoices);
+                                                        console.log("Selected Invoice", selectedInvoice);
                                                         setSelectedInvoice(
                                                             selectedInvoice
                                                         )
@@ -462,7 +446,7 @@ export default function FleetCom() {
                                                         // Set the selected products to the selected invoice
                                                         const selectedProducts = selectedInvoice?.map((item) => {
                                                             return {
-                                                                Prod: productos.find((prod) => prod.id === item.productId) || { id: "", name: "", provider: "", quantity: 0, location: "" },
+                                                                Prod: productos.find((prod) => prod.id === item.productId) || { id: "", name: "", provider: "", quantity: 0, location: "", Price: 0 },
                                                                 Qnty: item.quantity,
                                                                 Selected: true
                                                             }

@@ -27,7 +27,13 @@ export default function Navbar() {
 
         if (userID) {
             getPersonalById(userID).then((res) => {
-                setUser(res);
+                if (res === null) {
+                    console.error('User not found');
+                    setLoading(false);
+                    return;
+                }
+
+                setUser(res[0]);
                 setLoading(false);
             }).catch((err) => {
                 console.error(err);

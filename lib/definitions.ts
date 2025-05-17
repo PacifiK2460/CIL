@@ -4,6 +4,7 @@ export interface Product {
   name: string;
   quantity: number;
   location: string;
+  Price: number;
 }
 
 export interface Provider {
@@ -42,4 +43,10 @@ export interface Fleet {
   departure: string;
   destination: string;
   status: FleetStatus;
+}
+
+export interface Data2Plot{
+  newPrice: number;
+  ProductId: string;
+  Date: string;
 }

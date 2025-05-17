@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, request
 import argparse
 import threading
 import sqlite3
-import definitions
+import subprocess
+import os
+import signal
 
 app = Flask(__name__)
 
@@ -118,7 +120,6 @@ def update_personal(personal_id):
         "password": password,
     }
     
-    print(updated_personal)
     return [updated_personal]
 
 @app.route("/api/personal/<string:personal_id>", methods=["DELETE"])
@@ -172,30 +173,24 @@ def login():
             "address": row[3],
             "rol": row[4],
         }
-        print(person)
         return [person]
     else:
-        print("Invalid credentials")
         return {"error": "Invalid credentials"}, 401
 
         
 def run_server(port):
-    # Check if npm / pnpm is installed
+    # Check if npm is installed
     try:
-        import subprocess
-
-        subprocess.run(["pnpm", "--version"], check=True)
-    except FileNotFoundError:
-        print("pnpm is not installed. Por favor instala npm primero.")
+        subprocess.run(["npm", "--version"], check=True)
+    except subprocess.CalledProcessError:
+        print("npm is not installed. Please install npm to run the frontend.")
         return
-
-    # Start the server
+    
+    # Run the frontend server
     try:
-        import subprocess
-
-        subprocess.run(["pnpm", "run", "dev", "-p", str(port)], check=True)
+        subprocess.run(["npm", "start"], cwd="frontend", check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error al iniciar el servidor: {e}")
+        print(f"Error running frontend server: {e}")
         return
     
 @app.route("/api/products", methods=["GET"])
@@ -215,13 +210,13 @@ def get_products():
             "name": row[2],
             "quantity": row[3],
             "location": row[4],
+            "Price": row[5],
         }
         products_list.append(product)
         
     cur.close()
     
     # Return the list of products as JSON
-    print(products_list)
     return products_list
 
 @app.route("/api/products/<string:product_id>", methods=["GET"])
@@ -239,6 +234,7 @@ def get_product_by_id(product_id):
             "name": row[2],
             "quantity": row[3],
             "location": row[4],
+            "Price": row[5],
         }
         return [product]
     else:
@@ -256,11 +252,16 @@ def add_product():
     name = data["name"]
     quantity = data["quantity"]
     location = data["location"]
+    price = data["price"]
+    
+    # If arguments are not provided, return an error
+    if not all([product_id, provider, name, quantity, location, price]):
+        return []
 
     # Insert new product into the database
     cur.execute(
-        "INSERT INTO Products (id, provider, name, quantity, location) VALUES (?, ?, ?, ?, ?)",
-        (product_id, provider, name, quantity, location),
+        "INSERT INTO Products (id, provider, name, quantity, location, Price) VALUES (?, ?, ?, ?, ?, ?)",
+        (product_id, provider, name, quantity, location, price),
     )
     
     con.commit()
@@ -272,6 +273,7 @@ def add_product():
         "name": name,
         "quantity": quantity,
         "location": location,
+        "Price": price,
     }
     
     return [new_product]
@@ -287,11 +289,12 @@ def update_product(product_id):
     name = data["name"]
     quantity = data["quantity"]
     location = data["location"]
+    price = data["price"]
 
     # Update product in the database
     cur.execute(
-        "UPDATE Products SET provider=?, name=?, quantity=?, location=? WHERE id=?",
-        (provider, name, quantity, location, product_id),
+        "UPDATE Products SET provider=?, name=?, quantity=?, location=?, Price=? WHERE id=?",
+        (provider, name, quantity, location, price, product_id),
     )
     
     con.commit()
@@ -303,6 +306,7 @@ def update_product(product_id):
         "name": name,
         "quantity": quantity,
         "location": location,
+        "Price": price,
     }
     
     return [updated_product]
@@ -323,6 +327,7 @@ def delete_product(product_id):
         "name": row[2],
         "quantity": row[3],
         "location": row[4],
+        "Price": row[5],
     }
     
     # Delete product from the database
@@ -681,24 +686,27 @@ def update_invoice(invoice_id):
     
     # Get data from request
     data = request.get_json()
-    invoiceItemId = data["invoiceItemId"]
-    productId = data["productId"]
-    quantity = data["quantity"]
+    invoice = data["invoice"]
+    
+    print("Updating invoice")
+    print( invoice )
 
-    # Update invoice in the database
+    # Delete old invoice
+    cur.execute("DELETE FROM Invoices WHERE id=?", (invoice_id,))
+    # Insert new invoice into the database
     cur.execute(
-        "UPDATE Invoices SET invoiceItemId=?, productId=?, quantity=? WHERE id=?",
-        (invoiceItemId, productId, quantity, invoice_id),
+        "INSERT INTO Invoices (id, invoiceItemId, productId, quantity) VALUES (?, ?, ?, ?)",
+        (invoice_id, invoice["invoiceItemId"], invoice["productId"], invoice["quantity"]),
     )
     
     con.commit()
     cur.close()
     
     updated_invoice = {
-        "id": invoice_id,
-        "invoiceItemId": invoiceItemId,
-        "productId": productId,
-        "quantity": quantity,
+        "id": invoice["id"],
+        "invoiceItemId": invoice["invoiceItemId"],
+        "productId": invoice["productId"],
+        "quantity": invoice["quantity"],
     }
     
     return [updated_invoice]
@@ -727,6 +735,90 @@ def delete_invoice(invoice_id):
     cur.close()
     
     return [old_invoice] 
+
+@app.route("/api/history/<string:product_id>", methods=["GET"])
+def get_history(product_id):
+    con = sqlite3.connect("cil.db")
+    cur = con.cursor()
+    
+    cur.execute("SELECT * FROM PriceHistory WHERE productId=?", (product_id,))
+    rows = cur.fetchall()
+
+    # Convert rows to a list of dictionaries
+    history_list = []
+    for row in rows:
+        history = {
+            "newPrice": row[0],
+            "Date": row[1],
+            "ProductId": row[2],
+        }
+        history_list.append(history)
+        
+    cur.close()
+    
+    # Return the list of history as JSON
+    return history_list
+
+@app.route("/api/history/<string:product_id>", methods=["POST"])
+def add_history(product_id):
+    con = sqlite3.connect("cil.db")
+    cur = con.cursor()
+    
+    # Get data from request
+    data = request.get_json()
+    newPrice = data["newPrice"]
+    date = data["Date"]
+
+    # Insert new history into the database
+    cur.execute(
+        "INSERT INTO PriceHistory (newPrice, Date, ProductId) VALUES (?, ?, ?)",
+        (newPrice, date, product_id),
+    )
+    
+    con.commit()
+    cur.close()
+    
+    new_history = {
+        "newPrice": newPrice,
+        "Date": date,
+        "ProductId": product_id,
+    }
+    
+    if not new_history:
+        return []
+    
+    return [new_history]
+
+@app.route("/api/history/random/<string:product_id>", methods=["POST"])
+def generate_random_history(product_id):
+    con = sqlite3.connect("cil.db")
+    cur = con.cursor()
+    
+    # Generate random data for history
+    import random
+    import datetime
+    entries = random.randint(1, 10)
+    
+    for i in range(entries):
+        newPrice = random.randint(1, 1000)
+        date = datetime.datetime.now() - datetime.timedelta(days=random.randint(1, 365))
+        date = date.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Insert new history into the database
+        cur.execute(
+            "INSERT INTO PriceHistory (newPrice, Date, ProductId) VALUES (?, ?, ?)",
+            (newPrice, date, product_id),
+        )
+        con.commit()
+    
+    con.commit()
+    cur.close()
+
+    new_history = {
+        "ProductId": product_id,
+    }
+    
+    return [new_history]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

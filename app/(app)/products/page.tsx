@@ -1,13 +1,27 @@
 'use client';
 
 import { Button, Dialog, Flex, Select, Table, Text, Tooltip } from "@radix-ui/themes";
-import { PlusIcon, Pencil1Icon, Cross1Icon } from "@radix-ui/react-icons";
-import { addProduct, deleteProduct, getProducts, getProviders, updateProduct } from "@/lib/db";
+import { PlusIcon, Pencil1Icon, Cross1Icon, BarChartIcon } from "@radix-ui/react-icons";
+import { addProduct, deleteProduct, getProducts, getProviders, updateProduct, getHistoryPrice, generateRandomHistoryPrice } from "@/lib/db";
 import { Form } from "radix-ui";
 import { useEffect, useState } from "react";
-import { Product, Provider } from "@/lib/definitions";
+import { Data2Plot, Product, Provider } from "@/lib/definitions";
 import { Slide, toast, ToastContainer } from "react-toastify";
 
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    LineController,
+    Tooltip as ChartTooltip,
+    Legend,
+    Title,
+    Filler
+} from 'chart.js';
+
+import { Line } from 'react-chartjs-2';
 
 export default function Products() {
     const [productos, setProductos] = useState<Product[]>([]);
@@ -16,7 +30,22 @@ export default function Products() {
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+    const [selectedProductToPlot, setSelectedProductToPlot] = useState<Product | null>(null);
+    const [data2plot, setData2Plot] = useState<Data2Plot[] | null>([]);
+
     useEffect(() => {
+        ChartJS.register(
+            CategoryScale,
+            LinearScale,
+            PointElement,
+            LineElement,
+            LineController,
+            ChartTooltip,
+            Legend,
+            Title,
+            Filler
+        )
+
         async function fetchData() {
             const productos = await getProducts();
             const proveedores = await getProviders();
@@ -26,6 +55,20 @@ export default function Products() {
         }
         fetchData();
     }, []);
+
+    useEffect(() => {
+        getHistoryPrice(selectedProductToPlot?.id || '')
+            .then((data) => {
+                setData2Plot(data);
+            }
+            )
+            .catch((error) => {
+                console.error('Error fetching history price:', error);
+            }
+            );
+
+    }, [selectedProductToPlot]);
+
     return (
         <div className="p-6">
             <div className="flex flex-col items-baseline justify-start">
@@ -64,11 +107,15 @@ export default function Products() {
                                         const nombre = formData.get('nombre');
                                         const quantity = formData.get('quantity');
                                         const location = formData.get('location');
+                                        const price = formData.get('price');
+
+
                                         const res = await addProduct(
                                             provider as string,
                                             nombre as string,
                                             Number(quantity) || 0,
-                                            location as string
+                                            location as string,
+                                            Number(price) || 0
                                         )
                                         console.log('Response:', res);
                                         if (res) {
@@ -191,6 +238,22 @@ export default function Products() {
                                         </Form.Control>
                                     </Form.Field>
 
+                                    <Form.Field className="FormField" name="price">
+                                        <Form.Label className="FormLabel" asChild>
+                                            <Text as="div" size="3" mb="1" weight="bold">
+                                                Precio
+                                            </Text>
+                                        </Form.Label>
+                                        <Form.Message className="FormMessage" match="valueMissing">
+                                            <Text size="1" color="red" weight="regular" >
+                                                Ingresa un precio
+                                            </Text>
+                                        </Form.Message>
+                                        <Form.Control asChild className="w-full">
+                                            <input type="number" required placeholder="Ingresa un precio" />
+                                        </Form.Control>
+                                    </Form.Field>
+
                                     <Flex gap="3" mt="4" justify="between">
                                         <Dialog.Close>
                                             <Button variant="soft" color="gray">
@@ -234,6 +297,7 @@ export default function Products() {
                                 const nombre = formData.get('nombre');
                                 const quantity = formData.get('quantity');
                                 const location = formData.get('location');
+                                const price = formData.get('price');
 
 
                                 const res = await updateProduct(
@@ -241,7 +305,8 @@ export default function Products() {
                                     provider as string,
                                     nombre as string,
                                     Number(quantity) || 0,
-                                    location as string
+                                    location as string,
+                                    Number(price) || 0
                                 )
                                 console.log('Response:', res);
                                 if (res) {
@@ -372,6 +437,25 @@ export default function Products() {
                                 </Form.Control>
                             </Form.Field>
 
+                            <Form.Field className="FormField" name="price">
+                                <Form.Label className="FormLabel" asChild>
+                                    <Text as="div" size="3" mb="1" weight="bold">
+                                        Precio
+                                    </Text>
+                                </Form.Label>
+                                <Form.Message className="FormMessage" match="valueMissing">
+                                    <Text size="1" color="red" weight="regular" >
+                                        Ingresa un precio
+                                    </Text>
+                                </Form.Message>
+                                <Form.Control asChild className="w-full">
+                                    <input type="number" required placeholder="Ingresa un precio"
+                                        defaultValue={selectedProduct?.Price || 0}
+                                        content={String(selectedProduct?.Price) || "0"}
+                                    />
+                                </Form.Control>
+                            </Form.Field>
+
                             <Flex gap="3" mt="4" justify="between">
                                 <Dialog.Close>
                                     <Button variant="soft" color="gray"
@@ -395,13 +479,88 @@ export default function Products() {
                 </Dialog.Content>
             </Dialog.Root>
 
+            <Dialog.Root open={
+                selectedProductToPlot !== null
+            }>
+                <Dialog.Content>
+                    <Dialog.Title>Precio Histórico</Dialog.Title>
+                    <Dialog.Description>
+                        Aquí puedes ver el precio histórico del producto seleccionado.
+                    </Dialog.Description>
+
+                    <Flex direction="column" gap="3" className="w-full" mt="6">
+
+                        {
+                            data2plot && data2plot.length > 0 ? (
+                                <Line
+                                    data={{
+                                        labels: data2plot?.map((data) => data.ProductId),
+                                        datasets: [
+                                            {
+                                                label: 'Precio Histórico',
+                                                data: data2plot?.map((data) => data.newPrice),
+                                                fill: true,
+                                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                                borderColor: 'rgba(75, 192, 192, 1)',
+                                            }
+                                        ]
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        plugins: {
+                                            legend: {
+                                                position: 'top',
+                                                display: false,
+                                            },
+                                            title: {
+                                                display: false,
+                                                text: 'Precio Histórico del Producto',
+                                            },
+                                        },
+                                    }}
+                                />
+                            ) : (
+                                <Text size="3" color="gray">
+                                    No hay datos disponibles para este producto.
+                                </Text>
+                            )
+                        }
+
+                    </Flex>
+                    <Flex gap="3" mt="4" justify="between">
+                        <Dialog.Close>
+                            <Button variant="soft" color="red"
+                                onClick={() => {
+                                    setSelectedProductToPlot(null);
+                                }}
+                            >
+                                Cerrar
+                            </Button>
+                        </Dialog.Close>
+
+                        <Dialog.Close>
+                            <Button variant="soft" color="gray"
+                                onClick={() => {
+                                    generateRandomHistoryPrice(selectedProductToPlot?.id || '');
+                                    setSelectedProductToPlot(null);
+                                }}
+                            >
+                                Generar Datos Aleatorios
+                            </Button>
+                        </Dialog.Close>
+                    </Flex>
+
+                </Dialog.Content>
+            </Dialog.Root>
+
             <div>
-                <Table.Root variant="surface" className="mt-6 w-full h-fit" layout="fixed">
+                <Table.Root variant="surface" className="mt-6 w-full h-fit" layout="auto">
                     <Table.Header>
                         <Table.Row>
                             <Table.ColumnHeaderCell>ID</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Proveedor</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Producto</Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell>Precio</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Cantidad en Inventario</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Ubicación</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Acción</Table.ColumnHeaderCell>
@@ -417,10 +576,11 @@ export default function Products() {
                                         proveedores.find((proveedor) => proveedor.id === producto.provider)?.name || 'Proveedor no encontrado'
                                     }</Table.Cell>
                                     <Table.Cell>{producto.name}</Table.Cell>
+                                    <Table.Cell>{producto.Price}</Table.Cell>
                                     <Table.Cell>{producto.quantity}</Table.Cell>
                                     <Table.Cell>{producto.location}</Table.Cell>
                                     <Table.Cell>
-                                        <Flex direction="row" align="center" className="gap-2 w-5">
+                                        <Flex direction="row" align="center" className="gap-2">
                                             <Tooltip content="Editar producto" side="top" align="center">
                                                 <Button variant="outline"
                                                     onClick={() => {
@@ -454,6 +614,17 @@ export default function Products() {
                                                 >
                                                     <Cross1Icon />
                                                     Eliminar
+                                                </Button>
+                                            </Tooltip>
+
+                                            <Tooltip content="Ver Gráfica" side="top" align="center">
+                                                <Button variant="outline" onClick={
+                                                    () => {
+                                                        setSelectedProductToPlot(producto);
+                                                    }
+                                                }>
+                                                    <BarChartIcon />
+                                                    Ver Gráfica
                                                 </Button>
                                             </Tooltip>
                                         </Flex>

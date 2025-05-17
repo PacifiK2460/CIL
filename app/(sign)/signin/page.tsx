@@ -24,7 +24,7 @@ export default function SignIn() {
             console.log('Login successful')
 
             // set a cookie with the session ID
-            const userID = res.id
+            const userID = res[0].id
             const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
             document.cookie = `userID=${userID}; path=/; expires=${expires.toUTCString()}`
 
